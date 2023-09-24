@@ -225,7 +225,7 @@ double **createSquareMatrix(int size) {
     double **m;
     int i;
     
-    m = calloc(size, sizeof(double **));
+    m = calloc(size, sizeof(double *));
     for(i=0; i<size; i++) {
         m[i] = calloc(size, sizeof(double));
     }
