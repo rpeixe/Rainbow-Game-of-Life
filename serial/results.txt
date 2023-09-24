@@ -1,0 +1,8 @@
+Versão: Serial
+
+Comando: gcc -o rgl rgl.c
+
+Threads: 1
+Generation 2000: 51 alive
+Loop time: 253840 ms
+Total time: 253860 ms
