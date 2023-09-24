@@ -9,6 +9,7 @@
 #include <omp.h>
 
 
+char version[] = "openmp";
 const int N = 2048;
 const int maxGenerations = 2000;
 double **grid, **newGrid;
@@ -35,7 +36,7 @@ int main(int argc, char* argv[]) {
     omp_set_num_threads(numThreads);
 
     struct timeval timeStart, timeEnd;
-    int tmili;
+    int tmili, tmiliP, tmiliNP = 0;
     
     int currentGeneration, i, j;
 
@@ -43,12 +44,12 @@ int main(int argc, char* argv[]) {
     newGrid = createSquareMatrix(N);
 
     setInitialGeneration(grid);
-    //printGrid(grid, 0, 50);
+    printGrid(grid, 0, 50);
     
     gettimeofday(&timeStart, NULL);
 
     int threadID;
-    #pragma omp parallel private(threadID, currentGeneration, i, j) shared(maxGenerations, grid, newGrid, N)
+    #pragma omp parallel private(threadID, currentGeneration, i, j) shared(maxGenerations, grid, newGrid, N, tmiliNP) default(none)
     {
         threadID = omp_get_thread_num();
 
@@ -61,12 +62,17 @@ int main(int argc, char* argv[]) {
             }
             #pragma omp barrier
             if (threadID == 0) {
+                struct timeval timeStartNP, timeEndNP;
+                gettimeofday(&timeStartNP, NULL);
+
                 swap(&grid, &newGrid);
-                /*
+
                 if (currentGeneration <= 5) {
                     printGrid(grid, currentGeneration, 50);
                 }
-                */
+
+                gettimeofday(&timeEndNP, NULL);
+                tmiliNP += (int) (1000 * (timeEndNP.tv_sec - timeStartNP.tv_sec) + (timeEndNP.tv_usec - timeStartNP.tv_usec) / 1000);
             }
             #pragma omp barrier
         }
@@ -74,10 +80,11 @@ int main(int argc, char* argv[]) {
     
     gettimeofday(&timeEnd, NULL);
     tmili = (int) (1000 * (timeEnd.tv_sec - timeStart.tv_sec) + (timeEnd.tv_usec - timeStart.tv_usec) / 1000);
+    tmiliP = tmili - tmiliNP;
 
     printf("Threads: %d\n", numThreads);
     printf("Generation 2000: %d alive\n", countAlive(grid));
-    printf("Loop time: %d ms\n", tmili);
+    printf("Loop time: %d ms\n", tmiliP);
     printf("----------\n");
     
     return 0;
@@ -87,9 +94,9 @@ int main(int argc, char* argv[]) {
 void printGrid(double** grid, int generation, int n) {
     int i, j;
     FILE *output;
-    char fileName[32];
+    char fileName[255];
 
-    sprintf(fileName, "./output/gen%d.pgm", generation);
+    sprintf(fileName, "./grayscale-%s-gen%d.pgm", version, generation);
     if ((output = fopen(fileName, "w")) == NULL) {
         printf("Error opening the file.\n");
         exit(3);

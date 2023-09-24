@@ -6,3 +6,17 @@ Consiste em uma implementação do Rainbow Game of Life utilizando multithreadin
 
 Aluno:
 - Rodrigo Peixe Oliveira
+
+Comandos usados para compilar:
+
+Serial:
+
+`gcc -o rgl rgl.c`
+
+PThread:
+
+`gcc -o rgl-pthread rgl-pthread.c -pthread`
+
+OpenMP:
+
+`gcc -o rgl-openmp rgl-openmp.c -fopenmp`

@@ -11,6 +11,7 @@
 #include <pthread.h>
 
 
+char version[] = "pthread";
 const int N = 2048;
 const int maxGenerations = 2000;
 double **grid, **newGrid;
@@ -45,7 +46,7 @@ int main(int argc, char* argv[]) {
     struct threadArgs args[numThreads];
 
     struct timeval timeStart, timeEnd;
-    int tmili;
+    int tmili, tmiliP, tmiliNP = 0;
     
     int currentGeneration, i;
 
@@ -53,7 +54,7 @@ int main(int argc, char* argv[]) {
     newGrid = createSquareMatrix(N);
 
     setInitialGeneration(grid);
-    //printGrid(grid, 0, 50);
+    printGrid(grid, 0, 50);
 
     pthread_barrier_init(&barrier1, NULL, numThreads+1);
     pthread_barrier_init(&barrier2, NULL, numThreads+1);
@@ -70,17 +71,25 @@ int main(int argc, char* argv[]) {
 
     for (currentGeneration = 1; currentGeneration <= maxGenerations; currentGeneration++) {
         pthread_barrier_wait(&barrier1);
+
+        struct timeval timeStartNP, timeEndNP;
+        gettimeofday(&timeStartNP, NULL);
+        
         swap(&grid, &newGrid);
-        /*
+        
         if (currentGeneration <= 5) {
             printGrid(grid, currentGeneration, 50);
         }
-        */
+
+        gettimeofday(&timeEndNP, NULL);
+        tmiliNP += (int) (1000 * (timeEndNP.tv_sec - timeStartNP.tv_sec) + (timeEndNP.tv_usec - timeStartNP.tv_usec) / 1000);
+        
         pthread_barrier_wait(&barrier2);
     }
     
     gettimeofday(&timeEnd, NULL);
     tmili = (int) (1000 * (timeEnd.tv_sec - timeStart.tv_sec) + (timeEnd.tv_usec - timeStart.tv_usec) / 1000);
+    tmiliP = tmili - tmiliNP;
 
     for (i = 0; i < numThreads; i++) {
         pthread_join(threads[i], NULL);
@@ -88,7 +97,7 @@ int main(int argc, char* argv[]) {
 
     printf("Threads: %d\n", numThreads);
     printf("Generation %d: %d alive\n", currentGeneration-1, countAlive(grid));
-    printf("Loop time: %d ms\n", tmili);
+    printf("Loop time: %d ms\n", tmiliP);
     printf("----------\n");
     
     return 0;
@@ -114,9 +123,9 @@ void *newGridThread(void* args) {
 void printGrid(double** grid, int generation, int n) {
     int i, j;
     FILE *output;
-    char fileName[32];
+    char fileName[255];
 
-    sprintf(fileName, "./output/gen%d.pgm", generation);
+    sprintf(fileName, "./grayscale-%s-gen%d.pgm", version, generation);
     if ((output = fopen(fileName, "w")) == NULL) {
         printf("Error opening the file.\n");
         exit(3);
